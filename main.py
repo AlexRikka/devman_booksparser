@@ -1,5 +1,6 @@
 import requests
 import os
+import argparse
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
 from urllib.parse import urljoin, urlsplit
@@ -98,15 +99,27 @@ def download_book(id):
 
 
 def main():
+    parser = argparse.ArgumentParser(
+        description='Парсер книг с сайта tululu.org')
+    parser.add_argument('start_id',
+                        help='Номер первой книги из диапазона для скачивания',
+                        nargs='?',
+                        type=int,
+                        default=1)
+    parser.add_argument('end_id',
+                        help='Номер последней книги из диапазона для скачивания',
+                        nargs='?',
+                        type=int,
+                        default=11)
+    start_id = parser.parse_args().start_id
+    end_id = parser.parse_args().end_id+1
     os.makedirs('books', exist_ok=True)
     os.makedirs('images', exist_ok=True)
-    for i in range(1, 11):
+    for i in range(start_id, end_id, 1):
         try:
             book_info = download_book(i)
             print('Заголовок: ', book_info['title'])
-            print(book_info['genres'])
-            # for comment in book_info['comments']:
-            #     print(comment)
+            print('Автор: ', book_info['author'])
             print('\n')
         except requests.HTTPError:
             pass
