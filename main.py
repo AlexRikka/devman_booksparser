@@ -71,7 +71,11 @@ def download_book(id):
     soup_comments = soup.find_all('div', class_='texts')
     for comment in soup_comments:
         comments.append(comment.find('span').text)
-    return filename_title, comments
+    genres = []
+    soup_genres = soup.find('span', class_='d_book').find_all('a')
+    for genre in soup_genres:
+        genres.append(genre.text)
+    return filename_title, comments, genres
 
 
 def main():
@@ -79,10 +83,11 @@ def main():
     os.makedirs('images', exist_ok=True)
     for i in range(1, 11):
         try:
-            title, comments = download_book(i)
-            print(title)
-            for comment in comments:
-                print(comment)
+            title, comments, genres = download_book(i)
+            print('Заголовок: ', title)
+            print(genres)
+            # for comment in comments:
+            #     print(comment)
             print('\n')
         except requests.HTTPError:
             pass
