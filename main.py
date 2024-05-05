@@ -60,13 +60,18 @@ def download_book(id):
     soup = BeautifulSoup(response.text, 'lxml')
     title_tag = soup.find('table').find('h1')
     title_text = title_tag.text.split('::')[0].strip()
-    filename = sanitize_filename(title_text)
-    filename = f'{id}. ' + filename
+    filename_title = sanitize_filename(title_text)
+    filename = f'{id}. ' + filename_title
     txt_url = f'https://tululu.org/txt.php?id={id}'
     download_txt(txt_url, filename, folder='books/')
     img_src = soup.find('div', class_='bookimage').find('img')['src']
     img_url = urljoin('https://tululu.org', img_src)
     download_image(img_url)
+    comments = []
+    soup_comments = soup.find_all('div', class_='texts')
+    for comment in soup_comments:
+        comments.append(comment.find('span').text)
+    return filename_title, comments
 
 
 def main():
@@ -74,7 +79,11 @@ def main():
     os.makedirs('images', exist_ok=True)
     for i in range(1, 11):
         try:
-            download_book(i)
+            title, comments = download_book(i)
+            print(title)
+            for comment in comments:
+                print(comment)
+            print('\n')
         except requests.HTTPError:
             pass
 
