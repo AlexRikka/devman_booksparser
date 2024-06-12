@@ -1,6 +1,8 @@
 import requests
 import os
+import sys
 import argparse
+from time import sleep
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
 from urllib.parse import urljoin, urlsplit
@@ -9,7 +11,7 @@ from urllib.parse import urljoin, urlsplit
 def check_for_redirect(response):
     """Проверка на редирект."""
     if response.history:
-        raise requests.HTTPError
+        raise requests.TooManyRedirects
 
 
 def parse_book_page(soup):
@@ -54,7 +56,7 @@ def download_image(url,  folder='images/'):
         f.write(response.content)
 
 
-def download_txt(url, filename, folder='books/'):
+def download_txt(id, filename, folder='books/'):
     """Функция для скачивания текстовых файлов.
 
     Args:
@@ -66,7 +68,9 @@ def download_txt(url, filename, folder='books/'):
         str: Путь до файла, куда сохранён текст.
     """
 
-    response = requests.get(url)
+    params = {'id': id}
+    url = 'https://tululu.org/txt.php'
+    response = requests.get(url, params=params)
     response.raise_for_status()
     check_for_redirect(response)
     path = os.path.join(folder, f"{filename}.txt")
@@ -89,8 +93,7 @@ def download_book(id):
     soup = BeautifulSoup(response.text, 'lxml')
     book = parse_book_page(soup)
     filename = f"{id}.{book['title']}"
-    txt_url = f'https://tululu.org/txt.php?id={id}'
-    download_txt(txt_url, filename, folder='books/')
+    download_txt(id, filename, folder='books/')
     img_src = book['img_src']
     img_url = urljoin(url, img_src)
     download_image(img_url)
@@ -115,14 +118,34 @@ def main():
     end_id = args.end_id+1
     os.makedirs('books', exist_ok=True)
     os.makedirs('images', exist_ok=True)
-    for i in range(start_id, end_id, 1):
+    i = start_id
+    while i < end_id:
         try:
             book = download_book(i)
             print('Заголовок: ', book['title'])
             print('Автор: ', book['author'])
             print('\n')
-        except requests.HTTPError:
-            pass
+        except requests.TooManyRedirects:
+            print(f"Книга {i} отсутствует на сайте.\n")
+        except requests.ConnectionError:
+            print("Интернет соединение прервано. Ожидание соединения...\n")
+            while True:
+                try:
+                    url = f'https://tululu.org/b{i}/'
+                    response = requests.get(url)
+                    response.raise_for_status()
+                except requests.ConnectionError:
+                    sleep(3)
+                    continue
+                break
+            i = i - 1
+            print('Соединение восстановлено.\n')
+        except requests.HTTPError as err:
+            print(*err, file=sys.stderr)
+            sys.exit
+
+        finally:
+            i += 1
 
 
 if __name__ == '__main__':
