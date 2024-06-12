@@ -8,7 +8,7 @@ from urllib.parse import urljoin, urlsplit
 
 def check_for_redirect(response):
     """Проверка на редирект."""
-    if len(response.history) != 0:
+    if not response.history:
         raise requests.HTTPError
 
 
@@ -21,23 +21,20 @@ def parse_book_page(soup):
     Returns:
         book_info (dict): информация о книге
     """
-    book_info = {}
     title_tag = soup.find('table').find('h1')
     title_text = title_tag.text.split('::')[0].strip()
-    book_info['title'] = sanitize_filename(title_text)
-    book_info['author'] = soup.find('table').find('h1').find('a').text
+    book = {
+        'title': sanitize_filename(title_text),
+        'author': soup.find('table').find('h1').find('a').text,
+    }
 
-    book_info['comments'] = []
     soup_comments = soup.find_all('div', class_='texts')
-    for comment in soup_comments:
-        book_info['comments'].append(comment.find('span').text)
+    book['comments'] = [comment.find('span').text for comment in soup_comments]
 
-    book_info['genres'] = []
     soup_genres = soup.find('span', class_='d_book').find_all('a')
-    for genre in soup_genres:
-        book_info['genres'].append(genre.text)
+    book['genres'] = [genre.text for genre in soup_genres]
 
-    return book_info
+    return book
 
 
 def download_image(url,  folder='images/'):
@@ -50,7 +47,7 @@ def download_image(url,  folder='images/'):
     response = requests.get(url)
     response.raise_for_status()
     check_for_redirect(response)
-    img_path = folder + urlsplit(url).path.split('/')[-1]
+    img_path = f"{folder}{urlsplit(url).path.split('/')[-1]}"
     with open(img_path, 'wb') as f:
         f.write(response.content)
 
@@ -70,7 +67,7 @@ def download_txt(url, filename, folder='books/'):
     response = requests.get(url)
     response.raise_for_status()
     check_for_redirect(response)
-    path = os.path.join(folder, filename + '.txt')
+    path = os.path.join(folder, f"{filename}.txt")
     with open(path, 'wb') as f:
         f.write(response.content)
     return path
@@ -88,14 +85,14 @@ def download_book(id):
     response.raise_for_status()
     check_for_redirect(response)
     soup = BeautifulSoup(response.text, 'lxml')
-    book_info = parse_book_page(soup)
-    filename = f'{id}. ' + book_info['title']
+    book = parse_book_page(soup)
+    filename = f"{id}.{book['title']}"
     txt_url = f'https://tululu.org/txt.php?id={id}'
     download_txt(txt_url, filename, folder='books/')
     img_src = soup.find('div', class_='bookimage').find('img')['src']
     img_url = urljoin('https://tululu.org', img_src)
     download_image(img_url)
-    return book_info
+    return book
 
 
 def main():
@@ -111,15 +108,16 @@ def main():
                         nargs='?',
                         type=int,
                         default=11)
-    start_id = parser.parse_args().start_id
-    end_id = parser.parse_args().end_id+1
+    args = parser.parse_args()
+    start_id = args.start_id
+    end_id = args.end_id+1
     os.makedirs('books', exist_ok=True)
     os.makedirs('images', exist_ok=True)
     for i in range(start_id, end_id, 1):
         try:
-            book_info = download_book(i)
-            print('Заголовок: ', book_info['title'])
-            print('Автор: ', book_info['author'])
+            book = download_book(i)
+            print('Заголовок: ', book['title'])
+            print('Автор: ', book['author'])
             print('\n')
         except requests.HTTPError:
             pass
