@@ -8,7 +8,7 @@ from urllib.parse import urljoin, urlsplit
 
 def check_for_redirect(response):
     """Проверка на редирект."""
-    if not response.history:
+    if response.history:
         raise requests.HTTPError
 
 
@@ -33,6 +33,8 @@ def parse_book_page(soup):
 
     soup_genres = soup.find('span', class_='d_book').find_all('a')
     book['genres'] = [genre.text for genre in soup_genres]
+
+    book['img_src'] = soup.find('div', class_='bookimage').find('img')['src']
 
     return book
 
@@ -89,8 +91,8 @@ def download_book(id):
     filename = f"{id}.{book['title']}"
     txt_url = f'https://tululu.org/txt.php?id={id}'
     download_txt(txt_url, filename, folder='books/')
-    img_src = soup.find('div', class_='bookimage').find('img')['src']
-    img_url = urljoin('https://tululu.org', img_src)
+    img_src = book['img_src']
+    img_url = urljoin(url, img_src)
     download_image(img_url)
     return book
 
