@@ -56,7 +56,7 @@ def download_image(url,  folder='images/'):
         f.write(response.content)
 
 
-def download_txt(id, filename, folder='books/'):
+def download_txt(book_id, filename, folder='books/'):
     """Функция для скачивания текстовых файлов.
 
     Args:
@@ -68,7 +68,7 @@ def download_txt(id, filename, folder='books/'):
         str: Путь до файла, куда сохранён текст.
     """
 
-    params = {'id': id}
+    params = {'id': book_id}
     url = 'https://tululu.org/txt.php'
     response = requests.get(url, params=params)
     response.raise_for_status()
@@ -79,21 +79,21 @@ def download_txt(id, filename, folder='books/'):
     return path
 
 
-def download_book(id):
+def download_book(book_id):
     """Скачивает книги с tululu.org в формате текстовых файлов.
 
     Args:
-        id (int): id  книги для скачивания
+        book_id (int): id книги для скачивания
 
     """
-    url = f'https://tululu.org/b{id}/'
+    url = f'https://tululu.org/b{book_id}/'
     response = requests.get(url)
     response.raise_for_status()
     check_for_redirect(response)
     soup = BeautifulSoup(response.text, 'lxml')
     book = parse_book_page(soup)
-    filename = f"{id}.{book['title']}"
-    download_txt(id, filename, folder='books/')
+    filename = f"{book_id}.{book['title']}"
+    download_txt(book_id, filename, folder='books/')
     img_src = book['img_src']
     img_url = urljoin(url, img_src)
     download_image(img_url)
