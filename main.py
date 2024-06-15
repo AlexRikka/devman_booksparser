@@ -29,15 +29,11 @@ def parse_book_page(soup):
         'title': sanitize_filename(title_text),
         'author': soup.find('table').find('h1').find('a').text,
         'img_src': soup.find('div', class_='bookimage').find('img')['src'],
-        'genres': [genre.text for genre in soup.find('span', class_='d_book').find_all('a')],
-        'comments': [comment.find('span').text for comment in soup.find_all('div', class_='texts')]
+        'genres': [genre.text for genre
+                   in soup.find('span', class_='d_book').find_all('a')],
+        'comments': [comment.find('span').text for comment
+                     in soup.find_all('div', class_='texts')]
     }
-
-    # soup_comments = soup.find_all('div', class_='texts')
-    # book['comments'] = [comment.find('span').text for comment in soup_comments]
-
-    # soup_genres = soup.find('span', class_='d_book').find_all('a')
-    # book['genres'] = [genre.text for genre in soup_genres]
 
     return book
 
