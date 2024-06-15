@@ -126,21 +126,12 @@ def main():
             print(f"Книга {book_id} отсутствует на сайте.\n")
         except requests.ConnectionError:
             print("Интернет соединение прервано. Ожидание соединения...\n")
-            while True:
-                try:
-                    url = f'https://tululu.org/b{book_id}/'
-                    response = requests.get(url)
-                    response.raise_for_status()
-                except requests.ConnectionError:
-                    sleep(3)
-                    continue
-                break
-            book_id = book_id - 1
-            print('Соединение восстановлено.\n')
+            sleep(5)
+            book_id -= 1
+            continue
         except requests.HTTPError as err:
             print(*err, file=sys.stderr)
             sys.exit
-
         finally:
             book_id += 1
 
