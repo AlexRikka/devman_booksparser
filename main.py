@@ -118,34 +118,34 @@ def main():
     end_id = args.end_id+1
     os.makedirs('books', exist_ok=True)
     os.makedirs('images', exist_ok=True)
-    i = start_id
-    while i < end_id:
+    book_id = start_id
+    while book_id < end_id:
         try:
-            book = download_book(i)
+            book = download_book(book_id)
             print('Заголовок: ', book['title'])
             print('Автор: ', book['author'])
             print('\n')
         except requests.TooManyRedirects:
-            print(f"Книга {i} отсутствует на сайте.\n")
+            print(f"Книга {book_id} отсутствует на сайте.\n")
         except requests.ConnectionError:
             print("Интернет соединение прервано. Ожидание соединения...\n")
             while True:
                 try:
-                    url = f'https://tululu.org/b{i}/'
+                    url = f'https://tululu.org/b{book_id}/'
                     response = requests.get(url)
                     response.raise_for_status()
                 except requests.ConnectionError:
                     sleep(3)
                     continue
                 break
-            i = i - 1
+            book_id = book_id - 1
             print('Соединение восстановлено.\n')
         except requests.HTTPError as err:
             print(*err, file=sys.stderr)
             sys.exit
 
         finally:
-            i += 1
+            book_id += 1
 
 
 if __name__ == '__main__':
